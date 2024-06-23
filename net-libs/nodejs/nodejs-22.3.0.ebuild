@@ -19,8 +19,6 @@ if [[ ${PV} == *9999 ]]; then
 	SLOT="0"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
-	# We need this until simdjson is updated to 3.9.1 in nodejs (bug 931150)
-	SRC_URI+=" https://dev.gentoo.org/~sam/distfiles/net-libs/nodejs/nodejs-22.1.0-deps-import-simdjson-3.9.1-for-GCC-14.patch.xz"
 	SLOT="0/$(ver_cut 1)"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
 	S="${WORKDIR}/node-v${PV}"
@@ -38,7 +36,9 @@ RESTRICT="!test? ( test )"
 RDEPEND=">=app-arch/brotli-1.0.9:=
 	>=dev-libs/libuv-1.46.0:=
 	>=net-dns/c-ares-1.18.1:=
-	>=net-libs/nghttp2-1.41.0:=
+	>=net-libs/nghttp2-1.61.0:=
+	>=net-libs/ngtcp2-1.3.0:=
+	>=dev-libs/simdjson-3.9.1:=
 	sys-libs/zlib
 	corepack? ( !sys-apps/yarn )
 	system-icu? ( >=dev-libs/icu-71:= )
@@ -60,11 +60,6 @@ DEPEND="${RDEPEND}"
 # fatter binaries and set the disk requirement to 22GiB.
 CHECKREQS_MEMORY="8G"
 CHECKREQS_DISK_BUILD="22G"
-
-PATCHES=(
-	"${WORKDIR}"/nodejs-22.1.0-deps-import-simdjson-3.9.1-for-GCC-14.patch
-	"${FILESDIR}"/${P}-clang-fix-libatomic.patch
-)
 
 pkg_pretend() {
 	if [[ ${MERGE_TYPE} != "binary" ]]; then
@@ -121,10 +116,18 @@ src_configure() {
 
 	local myconf=(
 		--ninja
+		# ada is not packaged yet
+		# https://github.com/ada-url/ada
+		# --shared-ada
 		--shared-brotli
 		--shared-cares
 		--shared-libuv
 		--shared-nghttp2
+		--shared-ngtcp2
+		--shared-simdjson
+		# sindutf is not packaged yet
+		# https://github.com/simdutf/simdutf
+		# --shared-simdutf
 		--shared-zlib
 	)
 	use debug && myconf+=( --debug )
